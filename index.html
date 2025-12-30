@@ -1,0 +1,1730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MatchDeck</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        body.light {
+            background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 50%, #a8edea 100%);
+            color: #1f2937;
+        }
+
+        body.dark {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #ffffff;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 2rem;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+            text-shadow: 0 0 30px rgba(96, 165, 250, 0.3);
+        }
+
+        .theme-toggle {
+            width: 68px;
+            height: 68px;
+            border-radius: 50%;
+            cursor: pointer;
+            overflow: visible;
+            position: relative;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            background: transparent;
+            border: none;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1) rotate(180deg);
+            box-shadow: 0 6px 25px rgba(96, 165, 250, 0.4);
+        }
+
+        .yin-yang-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .laurel-wreath {
+            position: absolute;
+            inset: -8px;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, #3b82f6, #8b5cf6, #ec4899, #3b82f6);
+            animation: rotate 20s linear infinite;
+            opacity: 0.8;
+        }
+
+        .laurel-wreath::before {
+            content: '';
+            position: absolute;
+            inset: 4px;
+            border-radius: 50%;
+            background: inherit;
+        }
+
+        .laurel-wreath::after {
+            content: '';
+            position: absolute;
+            inset: 3px;
+            border-radius: 50%;
+        }
+
+        .light .laurel-wreath::after {
+            background: #e0c3fc;
+        }
+
+        .dark .laurel-wreath::after {
+            background: #1a1a2e;
+        }
+
+        @keyframes rotate {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .yin-yang {
+            width: 64px;
+            height: 64px;
+            position: relative;
+            border-radius: 50%;
+            transition: all 0.3s;
+            overflow: hidden;
+        }
+
+        .light .yin-yang {
+            background: linear-gradient(90deg, #ffffff 50%, #1a1a2e 50%);
+        }
+
+        .dark .yin-yang {
+            background: linear-gradient(90deg, #1a1a2e 50%, #ffffff 50%);
+        }
+
+        .yin-yang::before {
+            content: '';
+            position: absolute;
+            width: 32px;
+            height: 64px;
+            border-radius: 50%;
+            top: 0;
+            left: 0;
+        }
+
+        .light .yin-yang::before {
+            background: radial-gradient(circle at 50% 0%, #ffffff 16px, transparent 16px),
+                        radial-gradient(circle at 50% 100%, #1a1a2e 16px, transparent 16px);
+        }
+
+        .dark .yin-yang::before {
+            background: radial-gradient(circle at 50% 0%, #1a1a2e 16px, transparent 16px),
+                        radial-gradient(circle at 50% 100%, #ffffff 16px, transparent 16px);
+        }
+
+        .yin {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            top: 16px;
+            left: 16px;
+            z-index: 2;
+        }
+
+        .yang {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            bottom: 16px;
+            left: 16px;
+            z-index: 2;
+        }
+
+        .light .yin {
+            background-color: #1a1a2e;
+        }
+
+        .light .yang {
+            background-color: #ffffff;
+        }
+
+        .dark .yin {
+            background-color: #ffffff;
+        }
+
+        .dark .yang {
+            background-color: #1a1a2e;
+        }
+
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+            display: flex;
+            gap: 2rem;
+        }
+
+        .sidebar-left {
+            width: 280px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .card-add {
+            height: 160px;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            position: relative;
+            overflow: hidden;
+            border: none;
+        }
+
+        .card-add::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 1rem;
+            padding: 3px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6, #ec4899);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask-composite: exclude;
+            opacity: 0.7;
+            transition: opacity 0.4s;
+        }
+
+        .card-add:hover::before {
+            opacity: 1;
+            animation: shimmer 2s linear infinite;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899, #3b82f6, #8b5cf6);
+            background-size: 200% 100%;
+        }
+
+        .card-add::after {
+            content: '';
+            position: absolute;
+            inset: 3px;
+            border-radius: calc(1rem - 3px);
+            transition: all 0.4s;
+        }
+
+        .light .card-add::after {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.1));
+            backdrop-filter: blur(10px);
+        }
+
+        .dark .card-add::after {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.15));
+            backdrop-filter: blur(10px);
+        }
+
+        .card-add:hover::after {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.2), rgba(236, 72, 153, 0.2));
+        }
+
+        .card-add:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 50px rgba(99, 102, 241, 0.4);
+        }
+
+        .add-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6, #ec4899);
+            transition: all 0.4s;
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
+            position: relative;
+            z-index: 1;
+        }
+
+        .add-icon::before {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6, #ec4899);
+            opacity: 0;
+            filter: blur(10px);
+            transition: opacity 0.4s;
+        }
+
+        .card-add:hover .add-icon::before {
+            opacity: 0.6;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .card-add:hover .add-icon {
+            transform: rotate(180deg) scale(1.15);
+            box-shadow: 0 15px 40px rgba(139, 92, 246, 0.6);
+        }
+
+        .add-icon svg {
+            position: relative;
+            z-index: 1;
+        }
+
+        .add-text {
+            font-size: 1.1rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            position: relative;
+            z-index: 1;
+            letter-spacing: 0.5px;
+        }
+
+        .card-add:hover .add-text {
+            animation: shimmer 2s linear infinite;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899, #3b82f6, #8b5cf6);
+            background-size: 200% 100%;
+            -webkit-background-clip: text;
+            background-clip: text;
+        }
+
+        .cards-container {
+            flex: 1;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            height: 160px;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 1.25rem;
+            border: 1px solid;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1));
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+
+        .card:hover::after {
+            opacity: 1;
+        }
+
+        .light .card {
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(10px);
+            border-color: rgba(255, 255, 255, 0.6);
+            box-shadow: 0 8px 32px rgba(59, 130, 246, 0.15);
+        }
+
+        .dark .card {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(10px);
+            border-color: rgba(100, 181, 246, 0.25);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 60px rgba(99, 102, 241, 0.4);
+        }
+
+        .light .card:hover {
+            border-color: rgba(99, 102, 241, 0.8);
+        }
+
+        .dark .card:hover {
+            border-color: rgba(100, 181, 246, 0.6);
+        }
+
+        .card-emoji {
+            flex-shrink: 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        .card-emoji img {
+            width: 90px !important;
+            height: 90px !important;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            transition: all 0.4s;
+        }
+
+        .light .card-emoji img {
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+
+        .dark .card-emoji img {
+            border-color: rgba(96, 165, 250, 0.4);
+        }
+
+        .card:hover .card-emoji img {
+            transform: scale(1.1) rotate(5deg);
+            box-shadow: 0 12px 40px rgba(99, 102, 241, 0.5);
+        }
+
+        .card-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 0.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .card-username {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 0;
+            background: linear-gradient(135deg, #6366f1, #a855f7, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+        }
+
+        .card-bio {
+            font-size: 0.875rem;
+            line-height: 1.4;
+            margin: 0;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            word-break: break-word;
+        }
+
+        .light .card-bio {
+            color: rgba(31, 41, 55, 0.8);
+        }
+
+        .dark .card-bio {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 2rem;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .arrow-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            border: 2px solid;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .light .arrow-btn {
+            border-color: rgba(255, 255, 255, 0.4);
+            color: white;
+        }
+
+        .dark .arrow-btn {
+            border-color: rgba(96, 165, 250, 0.4);
+            color: #60a5fa;
+        }
+
+        .arrow-btn:hover {
+            transform: translateY(-50%) scale(1.15);
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.4);
+            background: rgba(99, 102, 241, 0.3);
+        }
+
+        .arrow-left {
+            left: 2rem;
+        }
+
+        .arrow-right {
+            right: 2rem;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            border: 2px solid;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: rgba(239, 68, 68, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .light .close-btn {
+            border-color: rgba(239, 68, 68, 0.4);
+            color: #ef4444;
+        }
+
+        .dark .close-btn {
+            border-color: rgba(248, 113, 113, 0.4);
+            color: #f87171;
+        }
+
+        .close-btn:hover {
+            transform: scale(1.15) rotate(90deg);
+            box-shadow: 0 8px 30px rgba(239, 68, 68, 0.4);
+            background: rgba(239, 68, 68, 0.3);
+        }
+
+        .modal-content {
+            width: 800px;
+            max-width: 90%;
+            border-radius: 1.5rem;
+            border: 2px solid;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease-out;
+        }
+
+        .light .modal-content {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(20px);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .dark .modal-content {
+            background: rgba(26, 32, 53, 0.85);
+            backdrop-filter: blur(20px);
+            border-color: rgba(100, 181, 246, 0.3);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: -200% center;
+            }
+            100% {
+                background-position: 200% center;
+            }
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .modal-section {
+            padding: 1.5rem;
+            border-bottom: 1px solid;
+        }
+
+        .light .modal-section {
+            border-color: rgba(209, 213, 219, 0.3);
+        }
+
+        .dark .modal-section {
+            border-color: rgba(100, 181, 246, 0.2);
+        }
+
+        .modal-section:last-child {
+            border-bottom: none;
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .profile-emoji {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid;
+        }
+
+        .light .profile-emoji {
+            border-color: #d1d5db;
+        }
+
+        .dark .profile-emoji {
+            border-color: #374151;
+        }
+
+        .profile-username {
+            font-size: 1.25rem;
+            font-weight: bold;
+        }
+
+        .bio-text {
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+
+        .section-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .social-item {
+            display: grid;
+            grid-template-columns: 120px 1fr auto;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.875rem;
+            margin-bottom: 0.75rem;
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+        }
+
+        .light .social-item {
+            background-color: rgba(229, 231, 235, 0.3);
+        }
+
+        .dark .social-item {
+            background-color: rgba(55, 65, 81, 0.3);
+        }
+
+        .social-platform {
+            font-weight: 600;
+        }
+
+        .social-username {
+            font-family: monospace;
+        }
+
+        .copy-btn {
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.25rem;
+            border: none;
+            cursor: pointer;
+            font-size: 0.75rem;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: background-color 0.2s;
+            white-space: nowrap;
+            background-color: #3b82f6;
+        }
+
+        .copy-btn:hover {
+            background-color: #2563eb;
+        }
+
+        .dark .copy-btn {
+            background-color: #2563eb;
+        }
+
+        .dark .copy-btn:hover {
+            background-color: #1d4ed8;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.75rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .form-input, .form-textarea {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.25rem;
+            border: 1px solid;
+            font-size: 0.875rem;
+        }
+
+        .light .form-input, .light .form-textarea {
+            background-color: #ffffff;
+            border-color: #d1d5db;
+            color: #111827;
+        }
+
+        .dark .form-input, .dark .form-textarea {
+            background-color: #374151;
+            border-color: #4b5563;
+            color: #ffffff;
+        }
+
+        .save-btn {
+            width: 100%;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            border: none;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 1rem;
+            color: white;
+            margin-top: 1rem;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #10b981, #059669);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+        }
+
+        .save-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s;
+        }
+
+        .save-btn:hover::before {
+            transform: translateX(100%);
+        }
+
+        .save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(16, 185, 129, 0.5);
+            background: linear-gradient(135deg, #059669, #047857);
+        }
+
+        .dark .save-btn {
+            background: linear-gradient(135deg, #34d399, #10b981);
+            box-shadow: 0 8px 20px rgba(52, 211, 153, 0.3);
+        }
+
+        .dark .save-btn:hover {
+            background: linear-gradient(135deg, #10b981, #059669);
+            box-shadow: 0 12px 30px rgba(52, 211, 153, 0.5);
+        }
+
+        .logout-btn {
+            width: 100%;
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+            border: none;
+            cursor: pointer;
+            font-size: 0.875rem;
+            color: white;
+            transition: background-color 0.2s;
+            background-color: #ef4444;
+        }
+
+        .logout-btn:hover {
+            background-color: #dc2626;
+        }
+
+        .dark .logout-btn {
+            background-color: #dc2626;
+        }
+
+        .dark .logout-btn:hover {
+            background-color: #b91c1c;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .socials-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .edit-layout {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .edit-left {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+            min-width: 150px;
+        }
+
+        .edit-right {
+            flex: 1;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            width: 120px;
+            height: 120px;
+        }
+
+        .profile-preview {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid;
+            cursor: pointer;
+            display: block;
+        }
+
+        .light .profile-preview {
+            border-color: #d1d5db;
+            background-color: #e5e7eb;
+        }
+
+        .dark .profile-preview {
+            border-color: #374151;
+            background-color: #374151;
+        }
+
+        .upload-overlay {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: #3b82f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: 2px solid;
+        }
+
+        .light .upload-overlay {
+            border-color: #ffffff;
+        }
+
+        .dark .upload-overlay {
+            border-color: #111827;
+        }
+
+        .social-container {
+            border: 1px solid;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .light .social-container {
+            border-color: #d1d5db;
+            background-color: rgba(229, 231, 235, 0.3);
+        }
+
+        .dark .social-container {
+            border-color: #374151;
+            background-color: rgba(55, 65, 81, 0.3);
+        }
+
+        .social-boxes {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .social-box {
+            border: 1px solid;
+            border-radius: 0.375rem;
+            padding: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            position: relative;
+        }
+
+        .light .social-box {
+            border-color: #d1d5db;
+            background-color: #ffffff;
+        }
+
+        .dark .social-box {
+            border-color: #4b5563;
+            background-color: #374151;
+        }
+
+        .social-box-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .social-box-content {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .username-mini-input {
+            width: 100%;
+            padding: 0.375rem;
+            border-radius: 0.25rem;
+            border: 1px solid;
+            font-size: 0.75rem;
+        }
+
+        .light .username-mini-input {
+            background-color: rgba(255, 255, 255, 0.6);
+            border-color: rgba(209, 213, 219, 0.6);
+            color: #1f2937;
+        }
+
+        .dark .username-mini-input {
+            background-color: #1f2937;
+            border-color: #4b5563;
+            color: #ffffff;
+        }
+
+        .remove-social-btn {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+            line-height: 1;
+        }
+
+        .remove-social-btn:hover {
+            background-color: #dc2626;
+        }
+
+        .add-social-btn {
+            width: 100%;
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+            border: 1px dashed;
+            cursor: pointer;
+            background-color: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            transition: background-color 0.2s;
+        }
+
+        .light .add-social-btn {
+            border-color: rgba(147, 51, 234, 0.5);
+            color: #7c3aed;
+        }
+
+        .light .add-social-btn:hover {
+            background-color: rgba(147, 51, 234, 0.1);
+        }
+
+        .dark .add-social-btn {
+            border-color: #4b5563;
+            color: #9ca3af;
+        }
+
+        .dark .add-social-btn:hover {
+            background-color: rgba(55, 65, 81, 0.5);
+        }
+
+        .platform-select {
+            width: 100%;
+            padding: 0.375rem;
+            border-radius: 0.25rem;
+            border: 1px solid;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+
+        .light .platform-select {
+            background-color: rgba(255, 255, 255, 0.6);
+            border-color: rgba(209, 213, 219, 0.6);
+            color: #1f2937;
+        }
+
+        .dark .platform-select {
+            background-color: #1f2937;
+            border-color: #4b5563;
+            color: #ffffff;
+        }
+
+        .platform-search-wrapper {
+            position: relative;
+            width: 100%;
+            display: none;
+        }
+
+        .platform-search {
+            width: 100%;
+            padding: 0.375rem;
+            border-radius: 0.25rem;
+            border: 1px solid;
+            font-size: 0.75rem;
+        }
+
+        .light .platform-search {
+            background-color: #f9fafb;
+            border-color: #d1d5db;
+            color: #111827;
+        }
+
+        .dark .platform-search {
+            background-color: #1f2937;
+            border-color: #4b5563;
+            color: #ffffff;
+        }
+
+        .platform-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid;
+            border-radius: 0.25rem;
+            margin-top: 0.25rem;
+            z-index: 100;
+        }
+
+        .light .platform-dropdown {
+            background-color: #ffffff;
+            border-color: #d1d5db;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .dark .platform-dropdown {
+            background-color: #1f2937;
+            border-color: #4b5563;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .platform-option {
+            padding: 0.5rem;
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+
+        .light .platform-option:hover {
+            background-color: #f3f4f6;
+        }
+
+        .dark .platform-option:hover {
+            background-color: #374151;
+        }
+
+        .crop-modal {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.95);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .crop-modal.active {
+            display: flex;
+        }
+
+        .crop-container {
+            background-color: #1f2937;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            max-width: 500px;
+        }
+
+        .crop-title {
+            color: white;
+            text-align: center;
+            margin-bottom: 1rem;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .crop-instructions {
+            color: #9ca3af;
+            text-align: center;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+        }
+
+        .crop-area {
+            width: 400px;
+            height: 400px;
+            position: relative;
+            overflow: hidden;
+            margin: 1rem auto;
+            border: 3px solid #3b82f6;
+            border-radius: 50%;
+            background-color: #111827;
+            cursor: move;
+        }
+
+        .crop-image {
+            position: absolute;
+            max-width: none;
+            user-select: none;
+        }
+
+        .crop-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 1.5rem;
+        }
+
+        .crop-btn {
+            padding: 0.75rem 2rem;
+            border-radius: 0.375rem;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            color: white;
+            font-size: 0.875rem;
+            transition: background-color 0.2s;
+        }
+
+        .crop-save {
+            background-color: #22c55e;
+        }
+
+        .crop-save:hover {
+            background-color: #16a34a;
+        }
+
+        .crop-cancel {
+            background-color: #6b7280;
+        }
+
+        .crop-cancel:hover {
+            background-color: #4b5563;
+        }
+    </style>
+</head>
+<body class="light">
+    <div class="header">
+        <div class="logo">MatchDeck</div>
+        <div class="theme-toggle" onclick="toggleTheme()">
+            <div class="yin-yang-container">
+                <div class="laurel-wreath"></div>
+                <div class="yin-yang">
+                    <div class="yin"></div>
+                    <div class="yang"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-area">
+        <div class="sidebar-left">
+            <div class="card-add" onclick="openEditModal()">
+                <div class="add-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                </div>
+                <span class="add-text">Create New Card</span>
+            </div>
+        </div>
+        <div class="cards-container">
+            <div class="cards-grid" id="cardsGrid"></div>
+        </div>
+    </div>
+
+    <div id="detailModal" class="modal-overlay">
+        <div class="arrow-btn arrow-left" onclick="previousCard()">←</div>
+        <div class="arrow-btn arrow-right" onclick="nextCard()">→</div>
+        <div class="close-btn" onclick="closeModal()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </div>
+
+        <div class="modal-content">
+            <div class="modal-section">
+                <div class="profile-header">
+                    <img class="profile-emoji" id="detailEmoji" src="https://via.placeholder.com/80/3b82f6/ffffff?text=Profile" alt="Profile">
+                    <div>
+                        <div class="profile-username" id="detailUsername">Display Name</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-section">
+                <p class="bio-text" id="detailBio">Bio text here...</p>
+            </div>
+
+            <div class="modal-section">
+                <h3 class="section-title">Social Media</h3>
+                <div class="socials-grid" id="detailSocials"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="editModal" class="modal-overlay">
+        <div class="close-btn" onclick="closeModal()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </div>
+
+        <div class="modal-content">
+            <div class="modal-section">
+                <h2 style="font-size: 1.25rem; font-weight: bold; margin-bottom: 1.5rem;">Create Your Card</h2>
+
+                <div class="edit-layout">
+                    <div class="edit-left">
+                        <div class="file-input-wrapper">
+                            <img class="profile-preview" id="profilePreview" src="https://via.placeholder.com/120/3b82f6/ffffff?text=Upload" alt="Profile Preview">
+                            <input type="file" class="file-input" id="profilePicInput" accept="image/*">
+                            <div class="upload-overlay" onclick="document.getElementById('profilePicInput').click()">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                            </div>
+                        </div>
+                        <input type="text" class="form-input" id="inputUsername" placeholder="Your Display Name" style="text-align: center; font-weight: 600;">
+                    </div>
+
+                    <div class="edit-right">
+                        <label class="form-label">Bio</label>
+                        <textarea class="form-textarea" id="inputBio" rows="5" placeholder="Tell us about yourself..." style="resize: none;"></textarea>
+                    </div>
+                </div>
+
+                <div class="social-container">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h3 style="font-size: 0.875rem; font-weight: 600;">Social Media</h3>
+                    </div>
+                    <div class="social-boxes" id="socialBoxes"></div>
+                    <button class="add-social-btn" onclick="addSocialBox()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Add Social Media
+                    </button>
+                </div>
+
+                <button class="save-btn" onclick="saveCard()">Save Card</button>
+                <button class="logout-btn" onclick="closeModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="cropModal" class="crop-modal">
+        <div class="crop-container">
+            <h3 class="crop-title">Crop Your Profile Picture</h3>
+            <p class="crop-instructions">Drag to reposition • Scroll to zoom</p>
+            <div class="crop-area" id="cropArea">
+                <img id="cropImage" class="crop-image" src="" alt="Crop">
+            </div>
+            <div class="crop-buttons">
+                <button class="crop-btn crop-save" onclick="saveCroppedImage()">Save</button>
+                <button class="crop-btn crop-cancel" onclick="closeCropModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    let userCard = null;
+    let profilePicURL = 'https://via.placeholder.com/80/3b82f6/ffffff?text=Profile';
+    let socialBoxCount = 0;
+    let currentImageForCrop = null;
+    let cropState = {
+        scale: 1,
+        x: 0,
+        y: 0,
+        isDragging: false,
+        startX: 0,
+        startY: 0
+    };
+
+const allPlatforms = [
+    // Global giants
+    "Facebook", "Instagram", "Snapchat", "TikTok", "Twitter/X", "YouTube", "Pinterest", "Reddit", "Tumblr", "Quora",
+
+    // Creator/short-form content
+    "Twitch", "Vimeo", "Dailymotion", "Rumble", "Triller", "Likee", "Byte", "BeReal", "Threads", "Locket", "Poparazzi",
+
+    // Professional & portfolio
+    "LinkedIn", "Behance", "Dribbble", "ArtStation", "GitHub",
+
+    // Regional/social platforms
+    "VK", "Weibo", "Douyin", "Bilibili", "Qzone", "Mixi", "Renren", "Taringa", "ShareChat", "Helo",
+
+    // Other trending or niche social media
+    "Nextdoor", "Vero", "MeWe", "Caffeine", "Clubhouse", "Yubo", "DLive", "Rizzle", "Flickr", "Periscope",
+
+    // Consoles & ecosystems
+    "PlayStation 5", "PlayStation 4", "Xbox Series X", "Xbox Series S", "Xbox One", "Nintendo Switch", 
+    "Nintendo Switch Lite", "Steam", "Epic Games Store", "GOG", "Origin", "Battle.net", "Itch.io", 
+    "Roblox", "Google Stadia", "Amazon Luna", "PlayStation Now", "Xbox Game Pass",
+
+    // Popular games (multiplayer & single-player)
+    "Minecraft", "Fortnite", "Call of Duty", "Call of Duty: Warzone", "League of Legends", 
+    "Valorant", "Apex Legends", "Overwatch", "PUBG", "GTA V", "FIFA", "Rocket League", 
+    "Among Us", "Hearthstone", "World of Warcraft", "Diablo IV", "Elden Ring", 
+    "The Legend of Zelda: Tears of the Kingdom", "Animal Crossing: New Horizons", 
+    "Super Smash Bros. Ultimate", "Splatoon 3", "Pokémon Scarlet & Violet", "Final Fantasy XIV", 
+    "CS:GO", "Dota 2", "Destiny 2", "Minecraft Dungeons", "Dead by Daylight", "Fall Guys", 
+    "Sea of Thieves", "The Sims 4", "Hollow Knight", "Cyberpunk 2077", "Assassin's Creed Valhalla", 
+    "Red Dead Redemption 2", "Skyrim", "Tetris Effect", "Valorant", "Genshin Impact", 
+    "Monster Hunter Rise", "Ghost of Tsushima", "Hades", "Stardew Valley", "Terraria", 
+    "Brawlhalla", "FIFA 24", "NBA 2K24", "Madden NFL 24", "Diablo III", "World of Tanks", 
+    "Warframe", "Arma 3", "Rust", "ARK: Survival Evolved", "Minecraft Education Edition", 
+    "Roblox Studio", "Magic: The Gathering Arena", "Yu-Gi-Oh! Master Duel", "Overcooked! 2", 
+    "Phasmophobia", "Valheim", "EVE Online", "RuneScape", "Path of Exile"
+];
+
+
+    document.getElementById('profilePicInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                currentImageForCrop = event.target.result;
+                openCropModal();
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    function openCropModal() {
+        const cropModal = document.getElementById('cropModal');
+        const cropImage = document.getElementById('cropImage');
+        
+        cropImage.src = currentImageForCrop;
+        cropModal.classList.add('active');
+        
+        cropImage.onload = function() {
+            const imgAspect = cropImage.naturalWidth / cropImage.naturalHeight;
+            const areaSize = 400;
+            
+            if (imgAspect > 1) {
+                cropImage.style.height = areaSize + 'px';
+                cropImage.style.width = (areaSize * imgAspect) + 'px';
+            } else {
+                cropImage.style.width = areaSize + 'px';
+                cropImage.style.height = (areaSize / imgAspect) + 'px';
+            }
+            
+            cropState.x = -(parseInt(cropImage.style.width) - areaSize) / 2;
+            cropState.y = -(parseInt(cropImage.style.height) - areaSize) / 2;
+            updateCropImagePosition();
+            setupCropControls();
+        };
+    }
+
+    function setupCropControls() {
+        const cropArea = document.getElementById('cropArea');
+        const cropImage = document.getElementById('cropImage');
+        
+        cropArea.onmousedown = function(e) {
+            if (e.target !== cropArea && e.target !== cropImage) return;
+            cropState.isDragging = true;
+            cropState.startX = e.clientX - cropState.x;
+            cropState.startY = e.clientY - cropState.y;
+            e.preventDefault();
+        };
+        
+        document.onmousemove = function(e) {
+            if (!cropState.isDragging) return;
+            
+            cropState.x = e.clientX - cropState.startX;
+            cropState.y = e.clientY - cropState.startY;
+            
+            const maxX = 0;
+            const minX = 400 - parseInt(cropImage.style.width);
+            const maxY = 0;
+            const minY = 400 - parseInt(cropImage.style.height);
+            
+            cropState.x = Math.max(minX, Math.min(maxX, cropState.x));
+            cropState.y = Math.max(minY, Math.min(maxY, cropState.y));
+            
+            updateCropImagePosition();
+        };
+        
+        document.onmouseup = function() {
+            cropState.isDragging = false;
+        };
+        
+        cropArea.onwheel = function(e) {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? 0.9 : 1.1;
+            const oldScale = cropState.scale;
+            cropState.scale *= delta;
+            cropState.scale = Math.max(0.5, Math.min(3, cropState.scale));
+            
+            const actualDelta = cropState.scale / oldScale;
+            
+            const currentWidth = parseInt(cropImage.style.width);
+            const currentHeight = parseInt(cropImage.style.height);
+            const newWidth = currentWidth * actualDelta;
+            const newHeight = currentHeight * actualDelta;
+            
+            cropImage.style.width = newWidth + 'px';
+            cropImage.style.height = newHeight + 'px';
+            
+            const centerX = 200;
+            const centerY = 200;
+            const offsetX = centerX - cropState.x;
+            const offsetY = centerY - cropState.y;
+            
+            cropState.x = centerX - (offsetX * actualDelta);
+            cropState.y = centerY - (offsetY * actualDelta);
+            
+            const maxX = 0;
+            const minX = 400 - newWidth;
+            const maxY = 0;
+            const minY = 400 - newHeight;
+            
+            cropState.x = Math.max(minX, Math.min(maxX, cropState.x));
+            cropState.y = Math.max(minY, Math.min(maxY, cropState.y));
+            
+            updateCropImagePosition();
+        };
+    }
+
+    function updateCropImagePosition() {
+        const cropImage = document.getElementById('cropImage');
+        cropImage.style.left = cropState.x + 'px';
+        cropImage.style.top = cropState.y + 'px';
+    }
+
+    function saveCroppedImage() {
+        const cropImage = document.getElementById('cropImage');
+        
+        const canvas = document.createElement('canvas');
+        canvas.width = 400;
+        canvas.height = 400;
+        const ctx = canvas.getContext('2d');
+        
+        const img = new Image();
+        img.src = currentImageForCrop;
+        img.onload = function() {
+            const sx = -cropState.x * (img.naturalWidth / parseInt(cropImage.style.width));
+            const sy = -cropState.y * (img.naturalHeight / parseInt(cropImage.style.height));
+            const sWidth = 400 * (img.naturalWidth / parseInt(cropImage.style.width));
+            const sHeight = 400 * (img.naturalHeight / parseInt(cropImage.style.height));
+            
+            ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, 400, 400);
+            
+            profilePicURL = canvas.toDataURL('image/jpeg', 0.9);
+            document.getElementById('profilePreview').src = profilePicURL;
+            closeCropModal();
+        };
+    }
+
+    function closeCropModal() {
+        document.getElementById('cropModal').classList.remove('active');
+        cropState = { scale: 1, x: 0, y: 0, isDragging: false, startX: 0, startY: 0 };
+    }
+
+    function addSocialBox() {
+        const container = document.getElementById('socialBoxes');
+        const boxId = 'social-' + socialBoxCount++;
+        
+        const box = document.createElement('div');
+        box.className = 'social-box';
+        box.id = boxId;
+        box.innerHTML = `
+            <div class="social-box-header">
+                <span style="font-size: 0.75rem; font-weight: 600; color: #6b7280;">Platform ${socialBoxCount}</span>
+                <button class="remove-social-btn" onclick="removeSocialBox('${boxId}')">×</button>
+            </div>
+            <div class="social-box-content">
+                <select class="platform-select">
+                    <option value="">Select platform...</option>
+                    ${allPlatforms.map(platform => `<option value="${platform}">${platform}</option>`).join('')}
+                </select>
+                <input type="text" class="username-mini-input" placeholder="@username">
+            </div>
+        `;
+        
+        container.appendChild(box);
+    }
+
+    function removeSocialBox(boxId) {
+        const box = document.getElementById(boxId);
+        if (box) box.remove();
+    }
+
+    function toggleTheme() {
+        document.body.classList.toggle('dark');
+        document.body.classList.toggle('light');
+    }
+
+    function truncateBio(bio, maxLength = 60) {
+        if (bio.length <= maxLength) return bio;
+        return bio.substring(0, maxLength) + '...';
+    }
+
+    function renderCards() {
+        const grid = document.getElementById('cardsGrid');
+        grid.innerHTML = '';
+
+        if (userCard) {
+            const cardEl = document.createElement('div');
+            cardEl.className = 'card';
+            cardEl.onclick = () => openDetailModal();
+
+            cardEl.innerHTML = `
+                <div class="card-emoji">
+                    <img src="${userCard.profilePicURL}" alt="${userCard.username}">
+                </div>
+                <div class="card-content">
+                    <h3 class="card-username">${userCard.username}</h3>
+                    <p class="card-bio">${truncateBio(userCard.bio, 80)}</p>
+                </div>
+            `;
+
+            grid.appendChild(cardEl);
+        }
+    }
+
+    function openDetailModal() {
+        if (!userCard) return;
+
+        document.getElementById('detailEmoji').src = userCard.profilePicURL;
+        document.getElementById('detailUsername').textContent = userCard.username;
+        document.getElementById('detailBio').textContent = userCard.bio;
+
+        const socialsDiv = document.getElementById('detailSocials');
+        socialsDiv.innerHTML = '';
+
+        if (userCard.socials && userCard.socials.length > 0) {
+            userCard.socials.forEach(social => {
+                const escapedUsername = social.username.replace(/'/g, "\\'");
+                socialsDiv.innerHTML += `
+                    <div class="social-item">
+                        <span class="social-platform">${social.platform}</span>
+                        <span class="social-username">${social.username}</span>
+                        <button class="copy-btn" onclick="copyToClipboard('${escapedUsername}', this); event.stopPropagation();">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                            Copy
+                        </button>
+                    </div>
+                `;
+            });
+        } else {
+            socialsDiv.innerHTML = '<p style="text-align: center; color: #9ca3af; font-size: 0.875rem;">No social media added</p>';
+        }
+
+        document.getElementById('detailModal').classList.add('active');
+    }
+
+    function openEditModal() {
+        document.getElementById('inputUsername').value = userCard?.username || '';
+        document.getElementById('inputBio').value = userCard?.bio || '';
+        document.getElementById('profilePreview').src = userCard?.profilePicURL || 'https://via.placeholder.com/120/3b82f6/ffffff?text=Upload';
+        profilePicURL = userCard?.profilePicURL || 'https://via.placeholder.com/80/3b82f6/ffffff?text=Profile';
+        
+        const socialBoxesContainer = document.getElementById('socialBoxes');
+        socialBoxesContainer.innerHTML = '';
+        socialBoxCount = 0;
+        
+        if (userCard?.socials && userCard.socials.length > 0) {
+            userCard.socials.forEach(social => {
+                addSocialBox();
+                const boxes = socialBoxesContainer.querySelectorAll('.social-box');
+                const lastBox = boxes[boxes.length - 1];
+                const platformSelect = lastBox.querySelector('.platform-select');
+                const usernameInput = lastBox.querySelector('.username-mini-input');
+                if (platformSelect) platformSelect.value = social.platform;
+                if (usernameInput) usernameInput.value = social.username;
+            });
+        }
+        
+        document.getElementById('editModal').classList.add('active');
+    }
+
+    function closeModal() {
+        document.getElementById('editModal').classList.remove('active');
+        document.getElementById('detailModal').classList.remove('active');
+    }
+
+    function saveCard() {
+        const username = document.getElementById('inputUsername').value.trim();
+        const bio = document.getElementById('inputBio').value.trim();
+
+        if (!username) {
+            alert('Please enter a display name');
+            return;
+        }
+
+        const socialBoxes = document.querySelectorAll('.social-box');
+        const socials = [];
+        
+        socialBoxes.forEach(box => {
+            const platform = box.querySelector('.platform-select').value.trim();
+            const username = box.querySelector('.username-mini-input').value.trim();
+            if (platform && username) {
+                socials.push({ platform, username });
+            }
+        });
+
+        userCard = {
+            username: username,
+            bio: bio || 'No bio provided',
+            profilePicURL: profilePicURL,
+            socials: socials
+        };
+
+        renderCards();
+        closeModal();
+    }
+
+    function copyToClipboard(text, button) {
+        navigator.clipboard.writeText(text).then(() => {
+            const originalContent = button.innerHTML;
+            button.innerHTML = '<span style="font-size: 0.75rem;">✓ Copied!</span>';
+            setTimeout(() => {
+                button.innerHTML = originalContent;
+            }, 1500);
+        }).catch(err => {
+            console.error('Failed to copy:', err);
+            alert('Failed to copy to clipboard');
+        });
+    }
+
+    function previousCard() { }
+    function nextCard() { }
+
+    renderCards();
+</script>
+</body>
+</html>
+ 
+ 
